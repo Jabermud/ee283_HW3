@@ -1,0 +1,139 @@
+---
+title: "HW3"
+author: "Jose Bermudez"
+date: "1/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+use_python("/Users/jabermud/miniconda3/bin/python")
+
+library(printr)
+```
+
+```{r}
+
+data(mtcars)
+help(mtcars)
+
+head(mtcars)
+
+aggregate(mpg ~ cyl, data=mtcars, mean)
+
+aggregate(mpg ~ cyl + gear, data=mtcars, mean)
+
+```
+
+```{r}
+library(dplyr)
+
+results = mtcars %>%
+  group_by(cyl) %>%
+  summarise(mean_mpg = mean(mpg))
+
+results
+
+```
+
+```{r}
+results = mtcars %>%
+  group_by(cyl, gear) %>%
+  summarise(mean_mpg = mean(mpg))
+
+as.data.frame(results)
+```
+
+## a working example
+
+```{r, echo=FALSE}
+if(file.exists("mtcars.sqlite3"))
+{
+  file.remove("mtcars.sqlite3")
+}
+```
+
+
+```{r}
+
+library(dbplyr)
+
+con <- DBI::dbConnect(RSQLite::SQLite(), "mtcars.sqlite3")
+
+DBI::dbWriteTable(con, "mtcars", mtcars)
+
+DBI::dbDisconnect(con)
+
+```
+
+```{sh}
+ls -lhrt *.sqlite3
+
+```
+
+```{r}
+con <- DBI::dbConnect(RSQLite::SQLite(), "mtcars.sqlite3")
+mtcars2 <- tbl(con, "mtcars")
+
+g = mtcars2 %>%
+  group_by(cyl) %>%
+  summarise(mean_mpg=mean(mpg))
+
+g %>% show_query()
+
+result = g %>% collect()
+as.data.frame(result)
+
+```
+
+## Python
+
+```{r, echo=FALSE}
+if(file.exists("mtcars_from_pandas.sqlite3"))
+{
+  file.remove("mtcars_from_pandas.sqlite3")
+}
+
+```{python}
+mtcars = r.mtcars
+mtcars.head()
+```
+
+```{python}
+mtcars.groupby(['cyl'])['mpg'].mean()
+
+mtcars.groupby(['cyl', 'gear'])['mpg'].mean()
+
+```
+
+```{python}
+import sqlite3 
+con = sqlite3.connect("mtcars_from_pandas.sqlite3")
+mtcars.to_sql("mtcars", con)
+con.close()
+
+```
+
+```{sh}
+ls -lhrt *.sqlite3
+```
+
+
+```{python}
+import pandas as pd
+
+con = sqlite3.connect("mtcars_from_pandas.sqlite3")
+df = pd.read_sql("select * from mtcars", con)
+df.head()
+```
+
+```{python}
+df = pd.read_sql("select cyl, avg(mpg) from mtcars group by cyl", con)
+df.head()
+```
+
+```{python}
+df = pd.read_sql("select cyl, gear, avg(mpg) from mtcars group by cyl, gear", con)
+df.head()
+```
