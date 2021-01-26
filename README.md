@@ -6,7 +6,7 @@ In this repository you will find:
 
 - Jose_hw3.html
 - Jose_hw3.Rmd
-- mtcars_from_pandas.sqlite3
+- mtcars.sqlite3
 - mtcars_from_pandas.sqlite3
 - README.md
 
